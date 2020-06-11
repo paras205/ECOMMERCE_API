@@ -50,30 +50,25 @@ exports.getCartItems = async (req, res) => {
 	}
 };
 
-exports.createOrder = (req, res) => {
-	req.user
-		.populate('cart.items.productId')
-		.execPopulate()
-		.then((user) => {
-			const products = user.cart.items.map((item) => {
-				return { quantity: item.quantity, product: { ...item.productId._doc } };
-			});
-			const order = new Order({
-				user: req.user,
-				products
-			});
-			return order.save();
-		})
-		.then(() => {
-			req.user.clearCart();
-		})
-		.then((result) => {
-			res.status(201).json({
-				status: 'success',
-				data: result
-			});
-		})
-		.catch((err) => console.log(err));
+exports.createOrder = async (req, res) => {
+	try {
+		const user = await req.user.populate('cart.items.productId');
+		const products = user.cart.items.map((item) => {
+			return { quantity: item.quantity, product: { ...item.productId._doc } };
+		});
+		const order = new Order({
+			user: req.user,
+			products
+		});
+		await order.save();
+		const result = await req.user.clearCart();
+		res.status(201).json({
+			status: 'success',
+			data: result
+		});
+	} catch (error) {
+		console.log(error);
+	}
 };
 
 exports.getAllOrders = async (req, res) => {
