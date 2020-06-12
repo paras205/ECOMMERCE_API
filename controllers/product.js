@@ -1,6 +1,32 @@
 const Product = require('../models/product');
 const User = require('../models/user');
 const Order = require('../models/order');
+const Category = require('../models/category');
+const ApiFeatures = require('../utils/appFeatures');
+
+exports.createCategory = async (req, res) => {
+	try {
+		const category = await Category.create(req.body);
+		res.status(201).json({
+			status: 'success',
+			data: category
+		});
+	} catch (err) {
+		console.log(err);
+	}
+};
+
+exports.getAllCategories = async (req, res) => {
+	try {
+		const categories = await Category.find();
+		res.status(200).json({
+			status: 'success',
+			data: categories
+		});
+	} catch (err) {
+		console.log(err);
+	}
+};
 
 exports.createProduct = async (req, res) => {
 	try {
@@ -16,16 +42,38 @@ exports.createProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
 	try {
-		const products = await Product.find();
+		const features = new ApiFeatures(Product.find(), req.query).paginate();
+		const products = await features.query;
 		res.status(200).json({
 			status: 'success',
+			page: features.queryString.page,
+			result: products.length,
 			data: products
 		});
 	} catch (err) {
 		console.log(err);
 	}
 };
-
+exports.getProductByCategory = async (req, res) => {
+	try {
+	} catch (err) {
+		console.log(err);
+	}
+};
+exports.searchProduct = async (req, res) => {
+	try {
+		const searchResult = await Product.find(
+			{ $text: { $search: req.query.search } },
+			{ score: { $meta: 'textScore' } }
+		);
+		res.status(201).json({
+			status: 'success',
+			data: searchResult
+		});
+	} catch (err) {
+		console.log(err);
+	}
+};
 exports.addToCart = async (req, res, next) => {
 	try {
 		const product = await Product.findById(req.params.productId);
